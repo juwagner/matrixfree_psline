@@ -15,7 +15,7 @@ estimate_alpha_generalized = function(
     L_list,
     lambda,
     alpha_init=NULL,
-    pcg_tol=10^(-4),
+    pcg_tol=1e-4,
     pcg_verbose=FALSE
 ){
   if(is.null(alpha_init)){
@@ -93,7 +93,7 @@ estimate_lambda_generalized = function(
     alpha,
     lambda=0.1,
     V_rad,
-    pcg_tol = 10^(-4), 
+    pcg_tol = 1e-4,
     pcg_verbose=FALSE
   ){
   
