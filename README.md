@@ -17,14 +17,15 @@ The main contributions reproduced here are:
 - Efficient spline smoothing over multiple covariates without constructing large tensor-product bases
 - Matrix-free computation of penalized spline estimators
 - Mixed-model formulation enabling computationally efficient smoothing parameter estimation
-- Extensions towards generalized regression models
+- Extensions towards generalized regression models and additive models (including the combination of both)
 - Example applications, including high-dimensional spatial and satellite-based data
 
+See [`docs/functions.md`](docs/functions.md) for a per-module map of what each function computes.
 
 ## Open work
 
 - Make C++ methods independent of P
 - Improve performance of C++ methods
-- Add correct diagonal precondionier for generalized response
 - Make PCG methods numerically stable
 - Add stopping criterion for fixpoint iteration
+- Add step-halving/line-search to the generalized model's Gauss-Newton iteration
