@@ -28,7 +28,7 @@ S_lambda <- solve(A_lambda) %*% PhiTPhi
 df_ref <- sum(diag(S_lambda))
 
 V_rad <- rademacher_matrix(K=K, M=100, seed=42)
-df_est <- estimate_trace(PhiT_list, L_list, lambda, V_rad)
+df_est <- estimate_df(PhiT_list, L_list, lambda, V_rad)
 
 cat("DF estimation <= 5% relative error: ", 
     (abs(df_est - df_ref) / df_ref) <= 0.05,"\n")

@@ -10,7 +10,7 @@ source("src/pspline/pcg_solver.R")
 # Estimate df(λ) = trace(S_λ), with S_λ = (A_λ)^{-1} ΦᵀΦ
 # Uses Hutchinson trace estimator: trace(S_λ) ≈ 1/M * sum_m  v_mᵀ S_λ v_m,
 # where v_m are Rademacher vectors
-estimate_trace <- function(
+estimate_df <- function(
     PhiT_list, L_list, lambda, V_rad, pcg_tol = 10^(-4), pcg_verbose=FALSE
 ) {
   stopifnot(is.matrix(V_rad))
@@ -77,7 +77,7 @@ estimate_lambda <- function(
     
     sigma2_eps <- mean((y - y_pred)^2)
     
-    df_hat <- estimate_trace(
+    df_hat <- estimate_df(
       PhiT_list = PhiT_list,
       L_list = L_list,
       lambda = lambda,
