@@ -2,30 +2,21 @@
 # Estimation of α and λ for generalized P-splines
 # ------------------------------------------------------------------------------
 
+source("src/utils/rademacher.R")
 source("src/pspline_generalized/pspline_operations_generalized.R")
 source("src/pspline_generalized/pcg_solver_generalized.R")
-
-# ------------------------------------------------------------------------------
-# Generate Rademacher random matrix
-rademacher_matrix <- function(K, M, seed = NULL) {
-  if (!is.null(seed)) set.seed(seed)
-  V_rad <- matrix(
-    sample(c(-1L, 1L), size = K * M, replace = TRUE), nrow = K, ncol = M
-  )
-  storage.mode(V_rad) <- "double"
-  return(V_rad)
-}
 
 # ------------------------------------------------------------------------------
 # Iteration to estimate α (with fixed λ) in generalized p-spline model
 estimate_alpha_generalized = function(
     n_iter,
-    PhiT_list, 
+    y,
+    PhiT_list,
     L_list,
-    lambda, 
-    alpha_init=NULL,
-    pcg_tol=10^(-4),
-    pcg_verbose=FALSE
+    lambda,
+    alpha_init = NULL,
+    pcg_tol = 1e-4,
+    pcg_verbose = FALSE
 ){
   if(is.null(alpha_init)){
     P <- length(L_list)
@@ -37,7 +28,7 @@ estimate_alpha_generalized = function(
   }
   
   for(i in 1:n_iter){
-    cat("---------- Start fixpoint iteration: ", i, "\n")
+    cat("Iteration for alpha: ", i, "/", n_iter, "\n")
     Phi_alpha <- mvp_Phi(PhiT_list, alpha)
     W1 <- as.vector(exp(Phi_alpha))
     W2 <- as.vector(exp(2*Phi_alpha))
@@ -53,6 +44,7 @@ estimate_alpha_generalized = function(
     alpha <- alpha_new
   }
   
+  cat("Solved for alpha \n")
   return(as.vector(alpha))
   
 }
@@ -65,7 +57,7 @@ estimate_trace_generalized = function(
     W,
     lambda,
     V_rad,
-    pcg_tol = 10^(-4), 
+    pcg_tol = 1e-4, 
     pcg_verbose=FALSE
 ){
   stopifnot(is.matrix(V_rad))
@@ -87,22 +79,47 @@ estimate_trace_generalized = function(
     )
     trace_terms[m] <- drop(crossprod(v, v_bar))
   }
-
-  return(as.numeric(mean(trace_terms)))
   
+  cat("Estimated trace \n")
+  return(as.numeric(mean(trace_terms)))
+
+}
+
+# ------------------------------------------------------------------------------
+# Estimate effective degrees of freedom df(λ) = trace(S_λ), with
+# S_λ = (ΦᵀWΦ + λΛ)^{-1} ΦᵀWΦ = I_K - (ΦᵀWΦ + λΛ)^{-1} λΛ
+estimate_df_generalized = function(
+    PhiT_list,
+    L_list,
+    W,
+    lambda,
+    V_rad,
+    pcg_tol = 1e-4,
+    pcg_verbose = FALSE
+){
+  K <- nrow(V_rad)
+  trace_est <- estimate_trace_generalized(
+    PhiT_list=PhiT_list,
+    L_list=L_list,
+    W=W,
+    lambda=lambda,
+    V_rad=V_rad,
+    pcg_tol=pcg_tol,
+    pcg_verbose=pcg_verbose
+  )
+  return(as.numeric(K - trace_est))
 }
 
 # ------------------------------------------------------------------------------
 # Iteration to estimate λ (for fixed α) in generalized p-spline model
 estimate_lambda_generalized = function(
-    n_iter,
     PhiT_list, 
     L_list,
     alpha,
-    lambda=0.1,
+    lambda = 0.1,
     V_rad,
-    pcg_tol = 10^(-4), 
-    pcg_verbose=FALSE
+    pcg_tol = 1e-4,
+    pcg_verbose = FALSE
   ){
   
   K <- length(alpha)
@@ -111,12 +128,13 @@ estimate_lambda_generalized = function(
   W2 <- as.vector(exp(2*Phi_alpha))
   
   sigma_eps <- mean((y-W1)^2)
-  
-  trace_est <- estimate_trace_generalized(PhiT_list, L_list, W2, lambda, V_rad)
-  sigma_alpha <- crossprod(alpha, mvp_Lambda(L_list, alpha)) / (K - trace_est)
+
+  df_est <- estimate_df_generalized(PhiT_list, L_list, W2, lambda, V_rad)
+  sigma_alpha <- crossprod(alpha, mvp_Lambda(L_list, alpha)) / df_est
   
   lambda <- as.numeric(sigma_eps / sigma_alpha)
   
+  cat("Estimated lambda \n")
   return(lambda)
 }
 
@@ -126,28 +144,30 @@ estimate_lambda_generalized = function(
 fit_pspline_generalized = function(
     n_iter=2,
     n_iter_alpha=2,
-    n_iter_lambda=2,
+    y,
     PhiT_list,
     L_list,
     lambda,
     V_rad,
-    pcg_tol=10^(-2)
+    pcg_tol=1e-2
     ){
-  
+
+  alpha <- NULL
+
   for (i in 1:n_iter) {
-    cat("Iteration: ", i, "\n")
+    cat("--- Outer iteration: ", i ,"/", n_iter, "\n")
     alpha <- estimate_alpha_generalized(
       n_iter=n_iter_alpha,
-      PhiT_list=PhiT_list, 
+      y=y,
+      PhiT_list=PhiT_list,
       L_list=L_list,
-      lambda=lambda, 
-      #alpha_init=alpha,
+      lambda=lambda,
+      alpha_init=alpha,
       pcg_tol=pcg_tol
     )
-    cat("Solved for alpha \n")
+
     if(i != n_iter){
       lambda <- estimate_lambda_generalized(
-        n_iter=n_iter,
         PhiT_list=PhiT_list, 
         L_list=L_list,
         alpha=alpha,

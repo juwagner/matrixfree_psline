@@ -395,5 +395,105 @@ NumericVector diag_gram_khatrirao(
     std::cout<<"P too large"<<std::endl;
   }
   return diag;
-  
+
+}
+
+// -----------------------------------------------------------------------------
+// Computes the diagonal of the weighted gram matrix: diag(A diag(W) Aᵀ)
+// with A = A_1 ⊙ ... ⊙ A_P and W a per-observation weight vector (length n)
+// [[Rcpp::export]]
+NumericVector diag_gram_khatrirao_weighted(
+    const List& A_list,
+    const NumericVector& W
+){
+
+  int P=A_list.size();
+  const NumericMatrix& A_0=A_list[0];
+  int n=A_0.ncol();
+  int K=1;
+  std::vector<int> K_p(P);
+  for(int p=0; p<P; p++){
+    const NumericMatrix& A_p = A_list[p];
+    K_p[p]=A_p.nrow();
+    K*=K_p[p];
+  }
+  NumericVector diag(K);
+
+  if(P==1){
+    for(int i=0; i<n; i++){
+      int j=0;
+      const double w_i = W[i];
+      const NumericMatrix& A_0 = A_list[0];
+      for(int m_0=0; m_0<K_p[0]; m_0++){
+        const double w_i_j =A_0(m_0,i);
+        diag[j++] += w_i*w_i_j*w_i_j;
+      }
+    }
+    return diag;
+  }
+  else if(P==2){
+    for(int i=0; i<n; i++){
+      int j=0;
+      const double w_i = W[i];
+      const NumericMatrix& A_0 = A_list[0];
+      const NumericMatrix& A_1 = A_list[1];
+      for(int m_0=0; m_0<K_p[0]; m_0++){
+        const double a0_m0_i = A_0(m_0,i);
+        for(int m_1=0; m_1<K_p[1]; m_1++){
+          const double w_i_j = a0_m0_i*A_1(m_1,i);
+          diag[j++] += w_i*w_i_j*w_i_j;
+        }
+      }
+    }
+    return diag;
+  }
+  else if(P==3){
+    for(int i=0; i<n; i++){
+      int j=0;
+      const double w_i = W[i];
+      const NumericMatrix& A_0 = A_list[0];
+      const NumericMatrix& A_1 = A_list[1];
+      const NumericMatrix& A_2 =A_list[2];
+      for(int m_0=0; m_0<K_p[0]; m_0++){
+        const double a0_m0_i = A_0(m_0,i);
+        for(int m_1=0; m_1<K_p[1]; m_1++){
+          const double a1_m1_i = A_1(m_1,i);
+          for(int m_2=0; m_2<K_p[2]; m_2++){
+            const double w_i_j = a0_m0_i*a1_m1_i*A_2(m_2,i);
+            diag[j++] += w_i*w_i_j*w_i_j;
+          }
+        }
+      }
+    }
+    return diag;
+  }
+  else if(P==4){
+    for(int i=0; i<n; i++){
+      int j=0;
+      const double w_i = W[i];
+      const NumericMatrix& A_0 = A_list[0];
+      const NumericMatrix& A_1 = A_list[1];
+      const NumericMatrix& A_2 = A_list[2];
+      const NumericMatrix& A_3 = A_list[3];
+      for(int m_0=0; m_0<K_p[0]; m_0++){
+        const double a0_m0_i = A_0(m_0,i);
+        for(int m_1=0; m_1<K_p[1]; m_1++){
+          const double a1_m1_i = A_1(m_1,i);
+          for(int m_2=0; m_2<K_p[2]; m_2++){
+            const double a2_m2_i = A_2(m_2,i);
+            for(int m_3=0; m_3<K_p[3]; m_3++){
+              const double w_i_j = a0_m0_i*a1_m1_i*a2_m2_i*A_3(m_3,i);
+              diag[j++] += w_i*w_i_j*w_i_j;
+            }
+          }
+        }
+      }
+    }
+    return diag;
+  }
+  else{
+    std::cout<<"P too large"<<std::endl;
+  }
+  return diag;
+
 }

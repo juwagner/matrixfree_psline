@@ -2,35 +2,23 @@
 # Estimation of the regularization parameters λ_s for additive P-splines
 # ------------------------------------------------------------------------------
 
+source("src/utils/rademacher.R")
 source("src/pspline/pcg_solver.R")
 source("src/pspline/parameter_estimation.R")
 source("src/pspline_additive/pspline_operations_additive.R")
 source("src/pspline_additive/pcg_solver_additive.R")
 
 # ------------------------------------------------------------------------------
-# Generate Rademacher random matrix per term
-rademacher_matrix_terms <- function(K_terms, M, seed = NULL) {
-  if (!is.null(seed)) set.seed(seed)
-  V <- lapply(
-    K_terms, 
-    function(K) matrix(
-      sample(c(-1L, 1L), size = K*M, replace = TRUE), nrow = K, ncol = M
-    )
-  )
-  return(V)
-}
-
-# ------------------------------------------------------------------------------
-# Estimate trace(S_λ_j) = (A_λ_j)^{-1} Φ_jᵀΦ_j per term
-# using the estimate_trace method
-estimate_trace_terms <- function(
+# Estimate df(S_λ_j) = trace((A_λ_j)^{-1} Φ_jᵀΦ_j) per term, treating each term
+# in isolation (ignores cross-term correlation) using the estimate_df method
+estimate_df_terms_marginal <- function(
     PhiT_terms, L_terms, lambda_vec, V_rad_terms, pcg_tol=1e-4, pcg_verbose=FALSE
 ) {
   n_terms <- length(PhiT_terms)
-  trace_terms <- lapply(
+  df_terms <- lapply(
     1:n_terms,
-    function(s) estimate_trace(
-      PhiT_list=PhiT_terms[[s]], 
+    function(s) estimate_df(
+      PhiT_list=PhiT_terms[[s]],
       L_list=L_terms[[s]],
       lambda=lambda_vec[s],
       V_rad=V_rad_terms[[s]],
@@ -38,7 +26,7 @@ estimate_trace_terms <- function(
       pcg_verbose=pcg_verbose
       )
   )
-  return(trace_terms)
+  return(df_terms)
 }
 
 # ------------------------------------------------------------------------------
@@ -90,6 +78,7 @@ estimate_lambda_terms <- function(
     V_rad_terms <- rademacher_matrix_terms(K_terms, M)
   }
   
+  cat("Start iteration for λ \n")
   if (is.null(lambda_vec_init)) {
     lambda_vec <- rep(0.1, n_terms)
   } else {
@@ -111,29 +100,29 @@ estimate_lambda_terms <- function(
     
     sigma2_eps <- mean((y - y_pred)^2)
     
-    trace_hat <- estimate_trace_terms(
+    df_hat_terms <- estimate_df_terms_marginal(
       PhiT_terms = PhiT_terms,
       L_terms    = L_terms,
       lambda_vec = lambda_vec,
       V_rad_terms    = V_rad_terms,
       pcg_tol    = pcg_tol
     )
-    
+
+    if (verbose) {
+      cat("Iter", i, ": lambda =", paste(round(lambda_vec, 6), collapse = " , "), "\n")
+    }
+
     sigma2_alpha_terms <- vapply(
       seq_len(n_terms),
       function(s) {
         drop(crossprod(
           alpha_terms[[s]], mvp_Lambda(L_terms[[s]], alpha_terms[[s]])
-        )) / trace_hat[[s]]
+        )) / df_hat_terms[[s]]
       },
       numeric(1)
     )
     
     lambda_new <- sigma2_eps / sigma2_alpha_terms
-    
-    if (verbose) {
-      cat("Iter", i, ": lambda =", paste(round(lambda_new, 6), collapse = " , "), "\n")
-    }
     
     if (max(abs(lambda_new - lambda_vec)) < 0.001)
       break

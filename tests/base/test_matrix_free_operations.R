@@ -35,10 +35,13 @@ n  <- 10000                  # number of columns in each A_p
 
 A_list_kr <- lapply(m, function(mm) matrix(rnorm(mm * n), mm, n))
 
+W <- rnorm(n)
+
 # Explicit dense Khatri–Rao matrix for reference
 A_kr <- Reduce(rTensor::khatri_rao, A_list_kr)
 A_transposed_kr <- t(A_kr)
 A_gram_kr <- A_kr %*% A_transposed_kr
+A_W_gram_kr <- A_kr %*% diag(W) %*% A_transposed_kr
 
 x_kr <- rnorm(n)
 y_kr <- rnorm(prod(m))
@@ -82,6 +85,14 @@ res_diag_ref <- diag(A_gram_kr)
 cat("Diagonal of gram Khatri-Rao matrix correct:", 
     all.equal(res_diag_mf, res_diag_ref, tol=1e-10), "\n")
 
+# Diagonal weighted of Gram matrix
+res_diag_weighted_mf <- diag_gram_khatrirao_weighted(A_list_kr, W)
+res_diag_weighted_ref <- diag(A_W_gram_kr)
+cat("Diagonal of weighter gram Khatri-Rao matrix correct:", 
+    all.equal(res_diag_weighted_mf, res_diag_weighted_ref, tol=1e-10), "\n")
+
+
+
 # ------------------------------------------------------------------------------
 # Performance benchmark
 # ------------------------------------------------------------------------------
@@ -104,6 +115,9 @@ res <- microbenchmark(
   
   diag_gram_khatrirao_mf = diag_gram_khatrirao(A_list_kr),
   diag_gram_khatrirao_ref = diag(A_gram_kr),
+  
+  diag_gram_khatrirao_weighted_mf = diag_gram_khatrirao_weighted(A_list_kr, W),
+  diag_gram_khatrirao_weighted_ref = diag(A_W_gram_kr),
   
   times = 10,
   unit = "ms"

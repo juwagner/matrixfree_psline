@@ -2,25 +2,15 @@
 # Estimation of the regularization parameter λ for P-splines
 # ------------------------------------------------------------------------------
 
+source("src/utils/rademacher.R")
 source("src/pspline/pspline_operations.R")
 source("src/pspline/pcg_solver.R")
-
-# ------------------------------------------------------------------------------
-# Generate Rademacher random matrix
-rademacher_matrix <- function(K, M, seed = NULL) {
-  if (!is.null(seed)) set.seed(seed)
-  V_rad <- matrix(
-    sample(c(-1L, 1L), size = K * M, replace = TRUE), nrow = K, ncol = M
-  )
-  storage.mode(V_rad) <- "double"
-  return(V_rad)
-}
 
 # ------------------------------------------------------------------------------
 # Estimate df(λ) = trace(S_λ), with S_λ = (A_λ)^{-1} ΦᵀΦ
 # Uses Hutchinson trace estimator: trace(S_λ) ≈ 1/M * sum_m  v_mᵀ S_λ v_m,
 # where v_m are Rademacher vectors
-estimate_trace <- function(
+estimate_df <- function(
     PhiT_list, L_list, lambda, V_rad, pcg_tol = 10^(-4), pcg_verbose=FALSE
 ) {
   stopifnot(is.matrix(V_rad))
@@ -69,9 +59,9 @@ estimate_lambda <- function(
   K <- prod(J_vec)
   
   if (is.null(V_rad)) {
-    V_rad <- rademacher_matrix(K, M, seed = 1)
+    V_rad <- rademacher_matrix(K, M)
   }
-  
+  cat("Start iteration for λ \n")
   lambda <- lambda_init
   
   alpha <- solve_pcg(
@@ -87,7 +77,7 @@ estimate_lambda <- function(
     
     sigma2_eps <- mean((y - y_pred)^2)
     
-    df_hat <- estimate_trace(
+    df_hat <- estimate_df(
       PhiT_list = PhiT_list,
       L_list = L_list,
       lambda = lambda,
@@ -95,13 +85,12 @@ estimate_lambda <- function(
       pcg_tol = pcg_tol
     )
     
-    sigma2_alpha <- drop(crossprod(alpha, mvp_Lambda(L_list, alpha))) / df_hat
-    
-    lambda_new <- sigma2_eps / sigma2_alpha
-    
     if (verbose) {
-      cat("Iter ", i, ": lambda = ", lambda_new, " df = ", df_hat, "\n")
+      cat("Iteration ", i, ": lambda = ", lambda, " df = ", df_hat, "\n")
     }
+    
+    sigma2_alpha <- drop(crossprod(alpha, mvp_Lambda(L_list, alpha))) / df_hat
+    lambda_new <- sigma2_eps / sigma2_alpha
     
     if(abs(lambda - lambda_new) <= 0.001) {
       break
