@@ -9,16 +9,16 @@ source("src/pspline_additive/pspline_operations_additive.R")
 source("src/pspline_additive/pcg_solver_additive.R")
 
 # ------------------------------------------------------------------------------
-# Estimate trace(S_λ_j) = (A_λ_j)^{-1} Φ_jᵀΦ_j per term
-# using the estimate_trace method
-estimate_trace_terms <- function(
+# Estimate df(S_λ_j) = trace((A_λ_j)^{-1} Φ_jᵀΦ_j) per term, treating each term
+# in isolation (ignores cross-term correlation) using the estimate_df method
+estimate_df_terms_marginal <- function(
     PhiT_terms, L_terms, lambda_vec, V_rad_terms, pcg_tol=1e-4, pcg_verbose=FALSE
 ) {
   n_terms <- length(PhiT_terms)
-  trace_terms <- lapply(
+  df_terms <- lapply(
     1:n_terms,
-    function(s) estimate_trace(
-      PhiT_list=PhiT_terms[[s]], 
+    function(s) estimate_df(
+      PhiT_list=PhiT_terms[[s]],
       L_list=L_terms[[s]],
       lambda=lambda_vec[s],
       V_rad=V_rad_terms[[s]],
@@ -26,7 +26,7 @@ estimate_trace_terms <- function(
       pcg_verbose=pcg_verbose
       )
   )
-  return(trace_terms)
+  return(df_terms)
 }
 
 # ------------------------------------------------------------------------------
@@ -100,24 +100,24 @@ estimate_lambda_terms <- function(
     
     sigma2_eps <- mean((y - y_pred)^2)
     
-    trace_hat <- estimate_trace_terms(
+    df_hat_terms <- estimate_df_terms_marginal(
       PhiT_terms = PhiT_terms,
       L_terms    = L_terms,
       lambda_vec = lambda_vec,
       V_rad_terms    = V_rad_terms,
       pcg_tol    = pcg_tol
     )
-    
+
     if (verbose) {
       cat("Iter", i, ": lambda =", paste(round(lambda_vec, 6), collapse = " , "), "\n")
     }
-    
+
     sigma2_alpha_terms <- vapply(
       seq_len(n_terms),
       function(s) {
         drop(crossprod(
           alpha_terms[[s]], mvp_Lambda(L_terms[[s]], alpha_terms[[s]])
-        )) / trace_hat[[s]]
+        )) / df_hat_terms[[s]]
       },
       numeric(1)
     )
