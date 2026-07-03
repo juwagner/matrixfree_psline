@@ -341,14 +341,19 @@ NumericVector diag_gram_khatrirao(
       const NumericMatrix& A_1 = A_list[1];
       for(int m_0=0; m_0<K_p[0]; m_0++){
         const double a0_m0_i = A_0(m_0,i);
-        for(int m_1=0; m_1<K_p[1]; m_1++){
-          const double w_i_j = a0_m0_i*A_1(m_1,i);
-          diag[j++] += w_i_j*w_i_j;
+        if(a0_m0_i==0){
+          j+=K_p[1];
+        }
+        else{
+          for(int m_1=0; m_1<K_p[1]; m_1++){
+            const double w_i_j = a0_m0_i*A_1(m_1,i);
+            diag[j++] += w_i_j*w_i_j;
+          }
         }
       }
     }
     return diag;
-  } 
+  }
   else if(P==3){
     for(int i=0; i<n; i++){
       int j=0;
@@ -357,11 +362,21 @@ NumericVector diag_gram_khatrirao(
       const NumericMatrix& A_2 =A_list[2];
       for(int m_0=0; m_0<K_p[0]; m_0++){
         const double a0_m0_i = A_0(m_0,i);
-        for(int m_1=0; m_1<K_p[1]; m_1++){
-          const double a1_m1_i = A_1(m_1,i);
-          for(int m_2=0; m_2<K_p[2]; m_2++){
-            const double w_i_j = a0_m0_i*a1_m1_i*A_2(m_2,i);
-            diag[j++] += w_i_j*w_i_j;
+        if(a0_m0_i==0){
+          j+=K_p[1]*K_p[2];
+        }
+        else{
+          for(int m_1=0; m_1<K_p[1]; m_1++){
+            const double a1_m1_i = A_1(m_1,i);
+            if(a1_m1_i==0){
+              j+=K_p[2];
+            }
+            else{
+              for(int m_2=0; m_2<K_p[2]; m_2++){
+                const double w_i_j = a0_m0_i*a1_m1_i*A_2(m_2,i);
+                diag[j++] += w_i_j*w_i_j;
+              }
+            }
           }
         }
       }
@@ -377,20 +392,35 @@ NumericVector diag_gram_khatrirao(
       const NumericMatrix& A_3 = A_list[3];
       for(int m_0=0; m_0<K_p[0]; m_0++){
         const double a0_m0_i = A_0(m_0,i);
-        for(int m_1=0; m_1<K_p[1]; m_1++){
-          const double a1_m1_i = A_1(m_1,i);
-          for(int m_2=0; m_2<K_p[2]; m_2++){
-            const double a2_m2_i = A_2(m_2,i);
-            for(int m_3=0; m_3<K_p[3]; m_3++){
-              const double w_i_j = a0_m0_i*a1_m1_i*a2_m2_i*A_3(m_3,i);
-              diag[j++] += w_i_j*w_i_j;
+        if(a0_m0_i==0){
+          j+=K_p[1]*K_p[2]*K_p[3];
+        }
+        else{
+          for(int m_1=0; m_1<K_p[1]; m_1++){
+            const double a1_m1_i = A_1(m_1,i);
+            if(a1_m1_i==0){
+              j+=K_p[2]*K_p[3];
+            }
+            else{
+              for(int m_2=0; m_2<K_p[2]; m_2++){
+                const double a2_m2_i = A_2(m_2,i);
+                if(a2_m2_i==0){
+                  j+=K_p[3];
+                }
+                else{
+                  for(int m_3=0; m_3<K_p[3]; m_3++){
+                    const double w_i_j = a0_m0_i*a1_m1_i*a2_m2_i*A_3(m_3,i);
+                    diag[j++] += w_i_j*w_i_j;
+                  }
+                }
+              }
             }
           }
         }
       }
     }
     return diag;
-  } 
+  }
   else{
     std::cout<<"P too large"<<std::endl;
   }
@@ -439,9 +469,14 @@ NumericVector diag_gram_khatrirao_weighted(
       const NumericMatrix& A_1 = A_list[1];
       for(int m_0=0; m_0<K_p[0]; m_0++){
         const double a0_m0_i = A_0(m_0,i);
-        for(int m_1=0; m_1<K_p[1]; m_1++){
-          const double w_i_j = a0_m0_i*A_1(m_1,i);
-          diag[j++] += w_i*w_i_j*w_i_j;
+        if(a0_m0_i==0){
+          j+=K_p[1];
+        }
+        else{
+          for(int m_1=0; m_1<K_p[1]; m_1++){
+            const double w_i_j = a0_m0_i*A_1(m_1,i);
+            diag[j++] += w_i*w_i_j*w_i_j;
+          }
         }
       }
     }
@@ -456,11 +491,21 @@ NumericVector diag_gram_khatrirao_weighted(
       const NumericMatrix& A_2 =A_list[2];
       for(int m_0=0; m_0<K_p[0]; m_0++){
         const double a0_m0_i = A_0(m_0,i);
-        for(int m_1=0; m_1<K_p[1]; m_1++){
-          const double a1_m1_i = A_1(m_1,i);
-          for(int m_2=0; m_2<K_p[2]; m_2++){
-            const double w_i_j = a0_m0_i*a1_m1_i*A_2(m_2,i);
-            diag[j++] += w_i*w_i_j*w_i_j;
+        if(a0_m0_i==0){
+          j+=K_p[1]*K_p[2];
+        }
+        else{
+          for(int m_1=0; m_1<K_p[1]; m_1++){
+            const double a1_m1_i = A_1(m_1,i);
+            if(a1_m1_i==0){
+              j+=K_p[2];
+            }
+            else{
+              for(int m_2=0; m_2<K_p[2]; m_2++){
+                const double w_i_j = a0_m0_i*a1_m1_i*A_2(m_2,i);
+                diag[j++] += w_i*w_i_j*w_i_j;
+              }
+            }
           }
         }
       }
@@ -477,13 +522,28 @@ NumericVector diag_gram_khatrirao_weighted(
       const NumericMatrix& A_3 = A_list[3];
       for(int m_0=0; m_0<K_p[0]; m_0++){
         const double a0_m0_i = A_0(m_0,i);
-        for(int m_1=0; m_1<K_p[1]; m_1++){
-          const double a1_m1_i = A_1(m_1,i);
-          for(int m_2=0; m_2<K_p[2]; m_2++){
-            const double a2_m2_i = A_2(m_2,i);
-            for(int m_3=0; m_3<K_p[3]; m_3++){
-              const double w_i_j = a0_m0_i*a1_m1_i*a2_m2_i*A_3(m_3,i);
-              diag[j++] += w_i*w_i_j*w_i_j;
+        if(a0_m0_i==0){
+          j+=K_p[1]*K_p[2]*K_p[3];
+        }
+        else{
+          for(int m_1=0; m_1<K_p[1]; m_1++){
+            const double a1_m1_i = A_1(m_1,i);
+            if(a1_m1_i==0){
+              j+=K_p[2]*K_p[3];
+            }
+            else{
+              for(int m_2=0; m_2<K_p[2]; m_2++){
+                const double a2_m2_i = A_2(m_2,i);
+                if(a2_m2_i==0){
+                  j+=K_p[3];
+                }
+                else{
+                  for(int m_3=0; m_3<K_p[3]; m_3++){
+                    const double w_i_j = a0_m0_i*a1_m1_i*a2_m2_i*A_3(m_3,i);
+                    diag[j++] += w_i*w_i_j*w_i_j;
+                  }
+                }
+              }
             }
           }
         }
