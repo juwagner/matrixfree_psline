@@ -98,8 +98,14 @@ NumericVector mvp_khatrirao(
           j+=m_p[1];
         }
         else{
+          const double a0x = a0_m0_i*x[i];
           for(int m_1=0; m_1<m_p[1]; m_1++){
-            res[j++] += a0_m0_i*A_1(m_1,i)*x[i];
+            const double a1_m1_i=A_1(m_1,i);
+            if(a1_m1_i==0){
+              j++;
+            } else{
+              res[j++] += a0x*a1_m1_i;
+            }
           }
         }
       }
@@ -123,8 +129,14 @@ NumericVector mvp_khatrirao(
             if(a1_m1_i==0){
               j+=m_p[2];
             } else{
+              const double a01x = a0_m0_i*a1_m1_i*x[i];
               for(int m_2=0; m_2<m_p[2]; m_2++){
-                res[j++] += a0_m0_i*a1_m1_i*A_2(m_2,i)*x[i];
+                const double a2_m2_i=A_2(m_2,i);
+                if(a2_m2_i==0){
+                  j++;
+                } else{
+                  res[j++] += a01x*a2_m2_i;
+                }
               }
             }
           }
@@ -156,8 +168,14 @@ NumericVector mvp_khatrirao(
                 if(a2_m2_i==0){
                   j+=m_p[3];
                 } else{
+                  const double a012x = a0_m0_i*a1_m1_i*a2_m2_i*x[i];
                   for(int m_3=0; m_3<m_p[3]; m_3++){
-                    res[j++] += a0_m0_i*a1_m1_i*a2_m2_i*A_3(m_3,i)*x[i];
+                    const double a3_m3_i=A_3(m_3,i);
+                    if(a3_m3_i==0){
+                      j++;
+                    } else{
+                      res[j++] += a012x*a3_m3_i;
+                    }
                   }
                 }
               }
@@ -216,7 +234,12 @@ NumericVector mvp_transposed_khatrirao(
         }
         else{
           for(int m_1=0; m_1<m_p[1]; m_1++){
-            res[i] += a0_m0_i*A_1(m_1,i)*y[j++];
+            const double a1_m1_i=A_1(m_1,i);
+            if(a1_m1_i==0){
+              j++;
+            } else{
+              res[i] += a0_m0_i*a1_m1_i*y[j++];
+            }
           }
         }
       }
@@ -241,8 +264,14 @@ NumericVector mvp_transposed_khatrirao(
               j+=m_p[2];
             }
             else{
+              const double a01 = a0_m0_i*a1_m1_i;
               for(int m_2=0; m_2<m_p[2]; m_2++){
-                res[i] += a0_m0_i*a1_m1_i*A_2(m_2,i)*y[j++];
+                const double a2_m2_i=A_2(m_2,i);
+                if(a2_m2_i==0){
+                  j++;
+                } else{
+                  res[i] += a01*a2_m2_i*y[j++];
+                }
               }
             }
           }
@@ -275,8 +304,14 @@ NumericVector mvp_transposed_khatrirao(
                 if(a2_m2_i==0){
                   j+=m_p[3];
                 } else{
+                  const double a012 = a0_m0_i*a1_m1_i*a2_m2_i;
                   for(int m_3=0; m_3<m_p[3]; m_3++){
-                    res[i] += a0_m0_i*a1_m1_i*a2_m2_i*A_3(m_3,i)*y[j++];
+                    const double a3_m3_i=A_3(m_3,i);
+                    if(a3_m3_i==0){
+                      j++;
+                    } else{
+                      res[i] += a012*a3_m3_i*y[j++];
+                    }
                   }
                 }
               }
