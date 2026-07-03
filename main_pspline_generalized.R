@@ -38,10 +38,10 @@ L_list <- lapply(1:P, function(p) build_penalty_difference(J=J_vec[p], l=l[p]))
 # ------------------------------------------------------------------------------
 # Estimate α using a fixed λ
 
-lambda <- 0.1
+lambda <- 0.01
 n_iter <- 3
 
-tic("Iteration to estimate alpha for generalized p-spline")
+tic("Iteration to estimate alpha for generalized P-spline (fixed λ)")
 
 alpha <- estimate_alpha_generalized(
   n_iter=n_iter,
@@ -49,8 +49,8 @@ alpha <- estimate_alpha_generalized(
   PhiT_list=PhiT_list,
   L_list=L_list,
   lambda=lambda,
-  pcg_tol=10^(-4),
-  pcg_verbose=FALSE
+  pcg_tol=1e-3,
+  pcg_verbose=TRUE
 )
 
 toc()
@@ -61,18 +61,17 @@ toc()
 V_rad <- rademacher_matrix(K, M=3, seed=42)
 lambda_init <- 0.1
 
-tic("Fixpoint iteration for generalized p-spline (α and λ)")
+tic("Iteration for generalized P-spline (α and λ)")
 
 result <- fit_pspline_generalized(
     n_iter=2,
     n_iter_alpha=2,
-    n_iter_lambda=2,
     y=y,
     PhiT_list=PhiT_list,
     L_list=L_list,
     lambda=lambda_init,
     V_rad=V_rad,
-    pcg_tol=10^(-2)
+    pcg_tol=1e-2
 )
 
 alpha <- result$alpha
@@ -80,3 +79,25 @@ lambda <- result$lambda
 
 toc()
 
+# ------------------------------------------------------------------------------
+# Validation metrics
+
+y_hat <- exp(mvp_Phi(PhiT_list, alpha))
+
+res <- y - y_hat
+RSS <- sum(res^2)
+
+W2 <- as.vector(exp(2*mvp_Phi(PhiT_list, alpha)))
+df <- estimate_df_generalized(
+  PhiT_list=PhiT_list, L_list=L_list, W=W2, lambda=lambda, V_rad=V_rad, pcg_tol=1e-3
+)
+AIC <- 2*n*log(RSS) + 2*df
+
+cat(
+  "Generalized P-Spline Model Validation | ",
+  "RSS:", RSS,
+  "DF:", df,
+  "AIC:", AIC,
+  "Min fitted:", min(y_hat),
+  "\n"
+)

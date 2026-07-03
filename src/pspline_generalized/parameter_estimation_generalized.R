@@ -14,9 +14,9 @@ estimate_alpha_generalized = function(
     PhiT_list,
     L_list,
     lambda,
-    alpha_init=NULL,
-    pcg_tol=1e-4,
-    pcg_verbose=FALSE
+    alpha_init = NULL,
+    pcg_tol = 1e-4,
+    pcg_verbose = FALSE
 ){
   if(is.null(alpha_init)){
     P <- length(L_list)
@@ -57,7 +57,7 @@ estimate_trace_generalized = function(
     W,
     lambda,
     V_rad,
-    pcg_tol = 10^(-4), 
+    pcg_tol = 1e-4, 
     pcg_verbose=FALSE
 ){
   stopifnot(is.matrix(V_rad))
@@ -82,7 +82,32 @@ estimate_trace_generalized = function(
   
   cat("Estimated trace \n")
   return(as.numeric(mean(trace_terms)))
-  
+
+}
+
+# ------------------------------------------------------------------------------
+# Estimate effective degrees of freedom df(λ) = trace(S_λ), with
+# S_λ = (ΦᵀWΦ + λΛ)^{-1} ΦᵀWΦ = I_K - (ΦᵀWΦ + λΛ)^{-1} λΛ
+estimate_df_generalized = function(
+    PhiT_list,
+    L_list,
+    W,
+    lambda,
+    V_rad,
+    pcg_tol = 1e-4,
+    pcg_verbose = FALSE
+){
+  K <- nrow(V_rad)
+  trace_est <- estimate_trace_generalized(
+    PhiT_list=PhiT_list,
+    L_list=L_list,
+    W=W,
+    lambda=lambda,
+    V_rad=V_rad,
+    pcg_tol=pcg_tol,
+    pcg_verbose=pcg_verbose
+  )
+  return(as.numeric(K - trace_est))
 }
 
 # ------------------------------------------------------------------------------
@@ -91,10 +116,10 @@ estimate_lambda_generalized = function(
     PhiT_list, 
     L_list,
     alpha,
-    lambda=0.1,
+    lambda = 0.1,
     V_rad,
     pcg_tol = 1e-4,
-    pcg_verbose=FALSE
+    pcg_verbose = FALSE
   ){
   
   K <- length(alpha)
@@ -103,9 +128,9 @@ estimate_lambda_generalized = function(
   W2 <- as.vector(exp(2*Phi_alpha))
   
   sigma_eps <- mean((y-W1)^2)
-  
-  trace_est <- estimate_trace_generalized(PhiT_list, L_list, W2, lambda, V_rad)
-  sigma_alpha <- crossprod(alpha, mvp_Lambda(L_list, alpha)) / (K - trace_est)
+
+  df_est <- estimate_df_generalized(PhiT_list, L_list, W2, lambda, V_rad)
+  sigma_alpha <- crossprod(alpha, mvp_Lambda(L_list, alpha)) / df_est
   
   lambda <- as.numeric(sigma_eps / sigma_alpha)
   
@@ -124,7 +149,7 @@ fit_pspline_generalized = function(
     L_list,
     lambda,
     V_rad,
-    pcg_tol=10^(-2)
+    pcg_tol=1e-2
     ){
 
   alpha <- NULL
