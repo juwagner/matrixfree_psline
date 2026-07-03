@@ -7,6 +7,7 @@
 #include <numeric>
 #include <iostream>
 #include <math.h>
+#include <vector>
 
 using namespace Rcpp;
 
@@ -14,49 +15,62 @@ using namespace Rcpp;
 // Computes the matrix–vector product (I_left ⊗ A ⊗ I_right) * x
 // [[Rcpp::export]]
 NumericVector mvp_normalfactor(
-    const NumericMatrix& A, 
-    int left, 
-    int right, 
+    const NumericMatrix& A,
+    int left,
+    int right,
     const NumericVector& x
 ){
-  
+
   int J = A.nrow();
-  //int left = nf_size[1];
-  //int right = nf_size[2];
   int base = 0;
   NumericVector v(x.size());
+
+  std::vector<double> z_in(J);
+  std::vector<double> z_out(J);
+
+  std::vector<int> lo(J), hi(J);
+  for(int nrow=0; nrow<J; nrow++){
+    int first=-1, last=-1;
+    for(int ncol=0; ncol<J; ncol++){
+      if(A(nrow,ncol)!=0){
+        if(first==-1) first=ncol;
+        last=ncol;
+      }
+    }
+    lo[nrow] = (first==-1) ? 0 : first;
+    hi[nrow] = (first==-1) ? -1 : last;
+  }
 
   for(int l=0; l<left; l++){
     for(int r=0; r<right; r++){
 
       int index = base+r;
-      
-      NumericVector z_in(J);
       for(int j=0; j<J; j++){
         z_in[j] = x[index];
         index += right;
       }
-      
-      NumericVector z_out(J);
+
       for(int nrow=0; nrow<J; nrow++){
-       for(int ncol=0; ncol<J; ncol++){
-         z_out[nrow] += A(nrow,ncol)*z_in[ncol];
-       }
+        double acc = 0;
+        for(int ncol=lo[nrow]; ncol<=hi[nrow]; ncol++){
+          acc += A(nrow,ncol)*z_in[ncol];
+        }
+        z_out[nrow] = acc;
       }
-      
+
       index = base+r;
 
       for(int j=0; j<J; j++){
         v[index] = z_out[j];
         index += right;
       }
-      
+
     }
-    
+
     base += (right*J);
-    
+
   }
-  
+
   return v;
 }
 
